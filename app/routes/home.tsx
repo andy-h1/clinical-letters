@@ -1,5 +1,7 @@
-import type { Route } from "./+types/home";
+// biome-ignore-all lint/correctness/noEmptyPattern: will rewrite later
+
 import { Welcome } from "../welcome/welcome";
+import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
 	return [

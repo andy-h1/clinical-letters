@@ -4,10 +4,17 @@
 /* deno-fmt-ignore-file */
 
 declare module "sst" {
-  export interface Resource {
-  }
+	export interface Resource {
+		LettersBucket: {
+			name: string;
+			type: "sst.aws.Bucket";
+		};
+		Web: {
+			type: "sst.aws.React";
+			url: string;
+		};
+	}
 }
 /// <reference path="sst-env.d.ts" />
 
-import "sst"
-export {}
+import "sst";

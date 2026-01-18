@@ -1,3 +1,6 @@
+// biome-ignore-all lint/a11y/noSvgWithoutTitle: will rewrite later
+// biome-ignore-all lint/correctness/noEmptyPattern: will rewrite later
+
 import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
 
