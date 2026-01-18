@@ -1,33 +1,32 @@
-import { Resource } from "sst";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { Resource } from "sst";
 import type { Route } from "./+types/api.upload";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const fileName = url.searchParams.get("fileName");
+	const url = new URL(request.url);
+	const fileName = url.searchParams.get("fileName");
 
-  if (!fileName) {
-    return Response.json(
-      { error: "fileName is required" },
-      { status: 400 }
-    );
-  }
+	if (!fileName) {
+		return Response.json({ error: "fileName is required" }, { status: 400 });
+	}
 
-  // Generate unique S3 key
-  const s3Key = `uploads/${crypto.randomUUID()}/${fileName}`;
+	if (!fileName.toLowerCae().endsWith(".pdf")) {
+		return Response.json({ error: "Only PDF files allowed" }, { status: 400 });
+	}
 
-  // Create presigned URL
-  const client = new S3Client({});
-  const command = new PutObjectCommand({
-    Bucket: Resource.LettersBucket.name,
-    Key: s3Key,
-    ContentType: "application/pdf",
-  });
+	const s3Key = `uploads/${crypto.randomUUID()}/${fileName}`;
 
-  const uploadUrl = await getSignedUrl(client, command, {
-    expiresIn: 3600, // 1 hour
-  });
+	const client = new S3Client({});
+	const command = new PutObjectCommand({
+		Bucket: Resource.LettersBucket.name,
+		Key: s3Key,
+		ContentType: "application/pdf",
+	});
 
-  return Response.json({ uploadUrl, s3Key });
+	const uploadUrl = await getSignedUrl(client, command, {
+		expiresIn: 3600,
+	});
+
+	return Response.json({ uploadUrl, s3Key });
 }
