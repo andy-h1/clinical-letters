@@ -7,4 +7,5 @@
 /build/
 
 # sst
-.sst
+.sst/
+.sst/**
