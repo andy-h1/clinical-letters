@@ -17,6 +17,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.971.0
         version: 3.971.0
+      '@clinical-letters/core':
+        specifier: workspace:*
+        version: link:packages/core
       '@react-router/node':
         specifier: 7.12.0
         version: 7.12.0(react-router@7.12.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)
@@ -87,6 +90,10 @@ importers:
       vitest:
         specifier: ^4.0.17
         version: 4.0.17(@types/node@22.19.7)(jiti@2.6.1)(lightningcss@1.30.2)
+
+  packages/core: {}
+
+  packages/functions: {}
 
 packages:
 
