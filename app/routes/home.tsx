@@ -48,22 +48,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	const isError = fetcher.data?.success === false;
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12">
+		<div className="min-h-screen bg-gray-50 py-6 lg:py-12">
 			<div className="max-w-xl mx-auto px-4">
-				<div className="flex justify-between items-center mb-8">
-					<h1 className="text-2xl font-bold text-gray-900">
+				<div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-6 lg:mb-8">
+					<h1 className="text-xl lg:text-2xl font-bold text-gray-900">
 						Clinical Letters
 					</h1>
 					<Link
 						to="/letters"
-						className="text-blue-600 hover:text-blue-800 font-medium"
+						className="text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base"
 					>
 						View All Letters
 					</Link>
 				</div>
 
-				<div className="bg-white p-6 rounded-lg shadow">
-					<h2 className="text-lg font-semibold mb-4">Upload Letter</h2>
+				<div className="bg-white p-4 md:p-6 rounded-lg shadow">
+					<h2 className="text-base lg:text-lg font-semibold mb-4">Upload Letter</h2>
 
 					{isSuccess && (
 						<div className="mb-4 p-3 bg-green-50 text-green-800 rounded-md">

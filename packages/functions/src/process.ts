@@ -71,16 +71,7 @@ async function generateSummary(text: string): Promise<string> {
 		messages: [
 			{
 				role: "user",
-				content: `You are a medical assistant helping doctors quickly understand clinical letters. 
-        
-Please summarize the following clinical letter concisely, highlighting:
-- Key diagnoses or conditions
-- Important findings or test results
-- Recommended actions or follow-ups
-- Any urgent concerns
-- Date, time, and location of past appointments
-
-Keep the summary under 300 words.
+				content: `Summarize this clinical letter in 3-5 bullet points. Be extremely concise - each bullet should be one short sentence. Focus on: diagnosis, key findings, and next steps. Do not use any markdown formatting like **bold** or *italics*.
 
 Clinical Letter:
 ${text.substring(0, 10000)}`,
