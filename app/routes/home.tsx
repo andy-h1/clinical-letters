@@ -1,9 +1,16 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createClient } from "@supabase/supabase-js";
+import { useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { Resource } from "sst";
+import { z } from "zod/v4-mini";
 import type { Route } from "./+types/home";
+
+const fileSchema = z
+	.file()
+	.max(10_000_000, "File size must be less than 10MB")
+	.mime(["application/pdf"], "Only PDF files are allowed");
 
 export async function loader() {
 	const key = `uploads/${crypto.randomUUID()}.pdf`;
@@ -42,6 +49,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function Home({ loaderData }: Route.ComponentProps) {
 	const { url, key } = loaderData;
 	const fetcher = useFetcher<typeof action>();
+	const [validationError, setValidationError] = useState<string | null>(null);
 
 	const isUploading = fetcher.state !== "idle";
 	const isSuccess = fetcher.data?.success === true;
@@ -63,7 +71,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 				</div>
 
 				<div className="bg-white p-4 md:p-6 rounded-lg shadow">
-					<h2 className="text-base lg:text-lg font-semibold mb-4">Upload Letter</h2>
+					<h2 className="text-base lg:text-lg font-semibold mb-4">
+						Upload Letter
+					</h2>
 
 					{isSuccess && (
 						<div className="mb-4 p-3 bg-green-50 text-green-800 rounded-md">
@@ -80,12 +90,25 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 						</div>
 					)}
 
+					{validationError && (
+						<div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md">
+							{validationError}
+						</div>
+					)}
+
 					<form
 						onSubmit={async (e) => {
 							e.preventDefault();
+							setValidationError(null);
+
 							const form = e.target as HTMLFormElement;
 							const file = form.file.files?.[0];
-							if (!file) return;
+
+							const result = fileSchema.safeParse(file);
+							if (!result.success) {
+								setValidationError(result.error.issues[0].message);
+								return;
+							}
 
 							await fetch(url, {
 								method: "PUT",
