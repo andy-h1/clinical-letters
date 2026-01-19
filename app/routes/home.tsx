@@ -136,22 +136,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	}, [isProcessingLetters, revalidator]);
 
 	return (
-		<div className="min-h-screen bg-[#a9bbb1] py-6 lg:py-12 font-serif">
-			<div className="max-w-5xl mx-auto px-4">
-				<div className="flex justify-between items-center mb-4">
+		<div className="min-h-screen bg-[#a9bbb1] font-serif">
+			<header className="bg-[#a9bbb1]">
+				<div className="max-w-5xl mx-auto px-4 py-4 flex justify-end items-center gap-4">
 					<span className="text-sm text-gray-700">{userEmail}</span>
 					<Link
 						to="/logout"
-						className="text-sm text-gray-600 hover:text-gray-900"
+						className="bg-white text-black py-2 px-4 rounded-md hover:bg-gray-100 text-sm"
 					>
 						Sign out
 					</Link>
 				</div>
+			</header>
 
-				<div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 lg:mb-8">
-					<h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-						Clinical Letters
-					</h1>
+			<div className="max-w-5xl mx-auto px-4 py-6 lg:py-12">
+				<div className="flex justify-between items-center mb-6">
+					<h1 className="text-xl lg:text-2xl font-bold text-black">Clinical Letters</h1>
 					<button
 						type="button"
 						onClick={() => setIsDrawerOpen(true)}
