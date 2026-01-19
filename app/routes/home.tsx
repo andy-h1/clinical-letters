@@ -102,7 +102,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	}, [isProcessingLetters, revalidator]);
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-6 lg:py-12">
+		<div className="min-h-screen bg-[#a9bbb1] py-6 lg:py-12 font-serif">
 			<div className="max-w-5xl mx-auto px-4">
 				<div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 lg:mb-8">
 					<h1 className="text-xl lg:text-2xl font-bold text-gray-900">
@@ -111,7 +111,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 					<button
 						type="button"
 						onClick={() => setIsDrawerOpen(true)}
-						className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center text-sm md:text-base"
+						className="bg-[#a8b3be] text-black py-2 px-4 rounded-md hover:bg-[#919ca6] text-center text-sm md:text-base border border-black"
 					>
 						Upload New Letter
 					</button>

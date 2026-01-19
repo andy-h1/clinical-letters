@@ -146,31 +146,31 @@ export function LettersList({ letters, onUploadClick }: LettersListProps) {
 				))}
 			</div>
 
-			<div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
+			<div className="hidden lg:block bg-[#edf1ef] rounded-lg shadow overflow-hidden">
 				<table className="min-w-full divide-y divide-gray-200">
-					<thead className="bg-gray-50">
+					<thead className="bg-[#a8b3be]">
 						<tr>
 							<th className="w-10 px-4 py-3"></th>
-							<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+							<th className="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
 								File Name
 							</th>
-							<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+							<th className="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
 								NHS Number
 							</th>
-							<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+							<th className="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
 								Status
 							</th>
-							<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+							<th className="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
 								Uploaded
 							</th>
 						</tr>
 					</thead>
-					<tbody className="bg-white divide-y divide-gray-200">
+					<tbody className="bg-[#edf1ef] divide-y divide-gray-200">
 						{letters.map((letter) => (
 							<>
 								<tr
 									key={letter.id}
-									className="hover:bg-gray-50 cursor-pointer"
+									className="hover:bg-[#dfe7e3] cursor-pointer"
 									tabIndex={0}
 									onClick={() => toggleExpand(letter.id)}
 									onKeyDown={(e) => {

@@ -142,7 +142,7 @@ export function UploadDrawer({
 						<button
 							type="submit"
 							disabled={isUploading || !selectedFile}
-							className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+							className="w-full bg-[#a8b3be] text-black py-3 px-4 rounded-md hover:bg-[#919ca6] disabled:opacity-50 disabled:cursor-not-allowed font-medium border border-black"
 						>
 							{isUploading ? "Uploading..." : "Upload Letter"}
 						</button>
