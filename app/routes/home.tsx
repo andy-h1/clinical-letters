@@ -4,21 +4,55 @@ import {
 	S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+	createServerClient,
+	parseCookieHeader,
+	serializeCookieHeader,
+} from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { useRevalidator } from "react-router";
+import { Link, redirect, useRevalidator } from "react-router";
 import { Resource } from "sst";
 import { LetterTable } from "../components/letter-table";
 import { UploadDrawer } from "../components/upload-drawer";
 import type { Route } from "./+types/home";
 
-export async function loader() {
-	const supabase = createClient(
+export async function loader({ request }: Route.LoaderArgs) {
+	const headers = new Headers();
+	const supabase = createServerClient(
+		Resource.SupabaseUrl.value,
+		Resource.SupabasePublishableKey.value,
+		{
+			cookies: {
+				getAll() {
+					return parseCookieHeader(request.headers.get("Cookie") ?? "") as {
+						name: string;
+						value: string;
+					}[];
+				},
+				setAll(cookiesToSet) {
+					cookiesToSet.forEach(({ name, value, options }) => {
+						headers.append("Set-Cookie", serializeCookieHeader(name, value, options));
+					});
+				},
+			},
+		},
+	);
+
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+
+	if (!user) {
+		return redirect("/login", { headers });
+	}
+
+	const supabaseAdmin = createClient(
 		Resource.SupabaseUrl.value,
 		Resource.SupabaseServiceKey.value,
 	);
 
-	const { data: letters, error } = await supabase
+	const { data: letters, error } = await supabaseAdmin
 		.from("letters")
 		.select(`
 			id,
@@ -56,7 +90,7 @@ export async function loader() {
 	});
 	const uploadUrl = await getSignedUrl(s3, uploadCommand);
 
-	return { letters: lettersWithUrls, uploadUrl, uploadKey };
+	return { letters: lettersWithUrls, uploadUrl, uploadKey, userEmail: user.email };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -83,7 +117,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-	const { letters, uploadUrl, uploadKey } = loaderData;
+	const { letters, uploadUrl, uploadKey, userEmail } = loaderData;
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const revalidator = useRevalidator();
 
@@ -104,6 +138,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	return (
 		<div className="min-h-screen bg-[#a9bbb1] py-6 lg:py-12 font-serif">
 			<div className="max-w-5xl mx-auto px-4">
+				<div className="flex justify-between items-center mb-4">
+					<span className="text-sm text-gray-700">{userEmail}</span>
+					<Link
+						to="/logout"
+						className="text-sm text-gray-600 hover:text-gray-900"
+					>
+						Sign out
+					</Link>
+				</div>
+
 				<div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 lg:mb-8">
 					<h1 className="text-xl lg:text-2xl font-bold text-gray-900">
 						Clinical Letters

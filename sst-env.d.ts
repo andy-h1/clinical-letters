@@ -13,6 +13,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "SupabasePublishableKey": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "SupabaseServiceKey": {
       "type": "sst.sst.Secret"
       "value": string

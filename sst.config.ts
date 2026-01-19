@@ -19,6 +19,7 @@ export default $config({
 	},
 	async run() {
 		const supabaseUrl = new sst.Secret("SupabaseUrl");
+		const supabasePublishableKey = new sst.Secret("SupabasePublishableKey");
 		const supabaseServiceKey = new sst.Secret("SupabaseServiceKey");
 		const claudeApiKey = new sst.Secret("ClaudeApiKey");
 
@@ -46,7 +47,7 @@ export default $config({
 		});
 
 		const web = new sst.aws.React("Web", {
-			link: [bucket, supabaseUrl, supabaseServiceKey],
+			link: [bucket, supabaseUrl, supabasePublishableKey, supabaseServiceKey],
 		});
 
 		return {
