@@ -6,7 +6,16 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": [
+			"app/**",
+			"packages/**",
+			"*.ts",
+			"*.tsx",
+			"*.json",
+			"!**/sst-env.d.ts",
+			"!**/.sst"
+		]
 	},
 	"formatter": {
 		"enabled": true,

@@ -32,7 +32,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 				},
 				setAll(cookiesToSet) {
 					cookiesToSet.forEach(({ name, value, options }) => {
-						headers.append("Set-Cookie", serializeCookieHeader(name, value, options));
+						headers.append(
+							"Set-Cookie",
+							serializeCookieHeader(name, value, options),
+						);
 					});
 				},
 			},
@@ -90,7 +93,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 	});
 	const uploadUrl = await getSignedUrl(s3, uploadCommand);
 
-	return { letters: lettersWithUrls, uploadUrl, uploadKey, userEmail: user.email };
+	return {
+		letters: lettersWithUrls,
+		uploadUrl,
+		uploadKey,
+		userEmail: user.email,
+	};
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -151,7 +159,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
 			<div className="max-w-5xl mx-auto px-4 py-6 lg:py-12">
 				<div className="flex justify-between items-center mb-6">
-					<h1 className="text-xl lg:text-2xl font-bold text-black">Clinical Letters</h1>
+					<h1 className="text-xl lg:text-2xl font-bold text-black">
+						Clinical Letters
+					</h1>
 					<button
 						type="button"
 						onClick={() => setIsDrawerOpen(true)}

@@ -22,7 +22,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 				},
 				setAll(cookiesToSet) {
 					cookiesToSet.forEach(({ name, value, options }) => {
-						headers.append("Set-Cookie", serializeCookieHeader(name, value, options));
+						headers.append(
+							"Set-Cookie",
+							serializeCookieHeader(name, value, options),
+						);
 					});
 				},
 			},

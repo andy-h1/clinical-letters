@@ -131,7 +131,9 @@ export function UploadDrawer({
 								/>
 								{selectedFile ? (
 									<>
-										<p className="font-medium text-gray-900">{selectedFile.name}</p>
+										<p className="font-medium text-gray-900">
+											{selectedFile.name}
+										</p>
 										<label
 											htmlFor="file-upload"
 											className="cursor-pointer text-blue-600 hover:text-blue-800 text-sm mt-2 inline-block"
