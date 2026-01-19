@@ -5,9 +5,21 @@
 
 declare module "sst" {
   export interface Resource {
+    "ClaudeApiKey": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "LettersBucket": {
       "name": string
       "type": "sst.aws.Bucket"
+    }
+    "SupabaseServiceKey": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "SupabaseUrl": {
+      "type": "sst.sst.Secret"
+      "value": string
     }
     "Web": {
       "type": "sst.aws.React"

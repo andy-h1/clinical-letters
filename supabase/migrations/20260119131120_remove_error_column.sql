@@ -1,0 +1,1 @@
+ALTER TABLE letters DROP COLUMN IF EXISTS error;
