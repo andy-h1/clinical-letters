@@ -1,26 +1,62 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+	GetObjectCommand,
+	PutObjectCommand,
+	S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createClient } from "@supabase/supabase-js";
-import { useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { useEffect, useState } from "react";
+import { useRevalidator } from "react-router";
 import { Resource } from "sst";
-import { z } from "zod/v4-mini";
+import { LettersList } from "../components/letters-list";
+import { UploadDrawer } from "../components/upload-drawer";
 import type { Route } from "./+types/home";
 
-const fileSchema = z
-	.file()
-	.max(10_000_000, "File size must be less than 10MB")
-	.mime(["application/pdf"], "Only PDF files are allowed");
-
 export async function loader() {
-	const key = `uploads/${crypto.randomUUID()}.pdf`;
-	const command = new PutObjectCommand({
-		Key: key,
+	const supabase = createClient(
+		Resource.SupabaseUrl.value,
+		Resource.SupabaseServiceKey.value,
+	);
+
+	const { data: letters, error } = await supabase
+		.from("letters")
+		.select(`
+			id,
+			file_name,
+			s3_key,
+			status,
+			summary,
+			created_at,
+			patients(nhs_number)
+		`)
+		.order("created_at", { ascending: false });
+
+	if (error) {
+		throw new Error(`Failed to fetch letters: ${error.message}`);
+	}
+
+	const s3 = new S3Client({});
+
+	const lettersWithUrls = await Promise.all(
+		letters.map(async (letter) => {
+			const command = new GetObjectCommand({
+				Bucket: Resource.LettersBucket.name,
+				Key: letter.s3_key,
+			});
+			const viewUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+			return { ...letter, viewUrl };
+		}),
+	);
+
+	const uploadKey = `uploads/${crypto.randomUUID()}.pdf`;
+	const uploadCommand = new PutObjectCommand({
+		Key: uploadKey,
 		Bucket: Resource.LettersBucket.name,
 		ContentType: "application/pdf",
 	});
-	const url = await getSignedUrl(new S3Client({}), command);
-	return { url, key };
+	const uploadUrl = await getSignedUrl(s3, uploadCommand);
+
+	return { letters: lettersWithUrls, uploadUrl, uploadKey };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -47,106 +83,52 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-	const { url, key } = loaderData;
-	const fetcher = useFetcher<typeof action>();
-	const [validationError, setValidationError] = useState<string | null>(null);
+	const { letters, uploadUrl, uploadKey } = loaderData;
+	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+	const revalidator = useRevalidator();
 
-	const isUploading = fetcher.state !== "idle";
-	const isSuccess = fetcher.data?.success === true;
-	const isError = fetcher.data?.success === false;
+	const isProcessingLetters = letters.some(
+		(letter) => letter.status === "PROCESSING" || letter.status === "PENDING",
+	);
+
+	useEffect(() => {
+		if (!isProcessingLetters) return;
+
+		const interval = setInterval(() => {
+			revalidator.revalidate();
+		}, 5000);
+
+		return () => clearInterval(interval);
+	}, [isProcessingLetters, revalidator]);
 
 	return (
 		<div className="min-h-screen bg-gray-50 py-6 lg:py-12">
-			<div className="max-w-xl mx-auto px-4">
-				<div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-6 lg:mb-8">
+			<div className="max-w-5xl mx-auto px-4">
+				<div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 lg:mb-8">
 					<h1 className="text-xl lg:text-2xl font-bold text-gray-900">
 						Clinical Letters
 					</h1>
-					<Link
-						to="/letters"
-						className="text-blue-600 hover:text-blue-800 font-medium text-sm md:text-base"
+					<button
+						type="button"
+						onClick={() => setIsDrawerOpen(true)}
+						className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center text-sm md:text-base"
 					>
-						View All Letters
-					</Link>
+						Upload New Letter
+					</button>
 				</div>
 
-				<div className="bg-white p-4 md:p-6 rounded-lg shadow">
-					<h2 className="text-base lg:text-lg font-semibold mb-4">
-						Upload Letter
-					</h2>
-
-					{isSuccess && (
-						<div className="mb-4 p-3 bg-green-50 text-green-800 rounded-md">
-							Upload successful! The letter is being processed.{" "}
-							<Link to="/letters" className="underline font-medium">
-								View all letters
-							</Link>
-						</div>
-					)}
-
-					{isError && (
-						<div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md">
-							Upload failed: {fetcher.data?.error}
-						</div>
-					)}
-
-					{validationError && (
-						<div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md">
-							{validationError}
-						</div>
-					)}
-
-					<form
-						onSubmit={async (e) => {
-							e.preventDefault();
-							setValidationError(null);
-
-							const form = e.target as HTMLFormElement;
-							const file = form.file.files?.[0];
-
-							const result = fileSchema.safeParse(file);
-							if (!result.success) {
-								setValidationError(result.error.issues[0].message);
-								return;
-							}
-
-							await fetch(url, {
-								method: "PUT",
-								body: file,
-								headers: { "Content-Type": "application/pdf" },
-							});
-
-							const formData = new FormData();
-							formData.append("key", key);
-							formData.append("fileName", file.name);
-
-							fetcher.submit(formData, { method: "POST" });
-							form.reset();
-						}}
-					>
-						<input
-							type="file"
-							name="file"
-							accept="application/pdf"
-							disabled={isUploading}
-							className="mb-4 block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-md file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100
-                disabled:opacity-50"
-						/>
-						<button
-							type="submit"
-							disabled={isUploading}
-							className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							{isUploading ? "Uploading..." : "Upload Letter"}
-						</button>
-					</form>
-				</div>
+				<LettersList
+					letters={letters}
+					onUploadClick={() => setIsDrawerOpen(true)}
+				/>
 			</div>
+
+			<UploadDrawer
+				isOpen={isDrawerOpen}
+				onClose={() => setIsDrawerOpen(false)}
+				uploadUrl={uploadUrl}
+				uploadKey={uploadKey}
+			/>
 		</div>
 	);
 }
