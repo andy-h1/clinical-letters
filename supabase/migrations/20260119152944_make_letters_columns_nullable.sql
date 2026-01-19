@@ -1,0 +1,2 @@
+ALTER TABLE letters ALTER COLUMN patient_id DROP NOT NULL;
+ALTER TABLE letters ALTER COLUMN uploaded_by DROP NOT NULL;

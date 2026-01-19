@@ -1,20 +1,51 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { createClient } from "@supabase/supabase-js";
+import { useFetcher } from "react-router";
 import { Resource } from "sst";
 import type { Route } from "./+types/home";
 
 export async function loader() {
+	const key = `uploads/${crypto.randomUUID()}.pdf`;
 	const command = new PutObjectCommand({
-		Key: `uploads/${crypto.randomUUID()}.pdf`,
+		Key: key,
 		Bucket: Resource.LettersBucket.name,
 		ContentType: "application/pdf",
 	});
 	const url = await getSignedUrl(new S3Client({}), command);
-	return { url };
+	return { url, key };
+}
+
+export async function action({ request }: Route.ActionArgs) {
+	const formData = await request.formData();
+	const key = formData.get("key") as string;
+	const fileName = formData.get("fileName") as string;
+
+	const supabase = createClient(
+		Resource.SupabaseUrl.value,
+		Resource.SupabaseServiceKey.value,
+	);
+
+	const { error } = await supabase.from("letters").insert({
+		file_name: fileName,
+		s3_key: key,
+		status: "PENDING",
+	});
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-	const { url } = loaderData;
+	const { url, key } = loaderData;
+	const fetcher = useFetcher<typeof action>();
+
+	const isUploading = fetcher.state !== "idle";
+	const isSuccess = fetcher.data?.success === true;
+	const isError = fetcher.data?.success === false;
 
 	return (
 		<div className="min-h-screen bg-gray-50 py-12">
@@ -26,43 +57,58 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 				<div className="bg-white p-6 rounded-lg shadow">
 					<h2 className="text-lg font-semibold mb-4">Upload Letter</h2>
 
+					{isSuccess && (
+						<div className="mb-4 p-3 bg-green-50 text-green-800 rounded-md">
+							Upload successful! The letter is being processed.
+						</div>
+					)}
+
+					{isError && (
+						<div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md">
+							Upload failed: {fetcher.data?.error}
+						</div>
+					)}
+
 					<form
 						onSubmit={async (e) => {
 							e.preventDefault();
-							const file = (e.target as HTMLFormElement).file.files?.[0];
+							const form = e.target as HTMLFormElement;
+							const file = form.file.files?.[0];
 							if (!file) return;
 
-							const res = await fetch(url, {
+							await fetch(url, {
 								method: "PUT",
 								body: file,
-								headers: {
-									"Content-Type": "application/pdf",
-								},
+								headers: { "Content-Type": "application/pdf" },
 							});
 
-							if (res.ok) {
-								alert("Upload successful!");
-							} else {
-								alert("Upload failed");
-							}
+							const formData = new FormData();
+							formData.append("key", key);
+							formData.append("fileName", file.name);
+
+							fetcher.submit(formData, { method: "POST" });
+							form.reset();
 						}}
 					>
 						<input
-							name="file"
 							type="file"
+							name="file"
 							accept="application/pdf"
+							disabled={isUploading}
 							className="mb-4 block w-full text-sm text-gray-500
-								file:mr-4 file:py-2 file:px-4
-								file:rounded file:border-0
-								file:text-sm file:font-semibold
-								file:bg-blue-50 file:text-blue-700
-								hover:file:bg-blue-100"
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100
+                disabled:opacity-50"
 						/>
 						<button
 							type="submit"
-							className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+							disabled={isUploading}
+							className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							Upload
+							{isUploading ? "Uploading..." : "Upload Letter"}
 						</button>
 					</form>
 				</div>

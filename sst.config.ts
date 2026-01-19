@@ -46,7 +46,7 @@ export default $config({
 		});
 
 		const web = new sst.aws.React("Web", {
-			link: [bucket],
+			link: [bucket, supabaseUrl, supabaseServiceKey],
 		});
 
 		return {

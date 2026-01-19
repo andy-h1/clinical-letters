@@ -2,8 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { createClient } from "@supabase/supabase-js";
 import type { S3Event } from "aws-lambda";
-import { PDFParse } from "pdf-parse";
 import { Resource } from "sst";
+import { extractText, getDocumentProxy } from "unpdf";
 
 const s3 = new S3Client({});
 const supabase = createClient(
@@ -30,9 +30,9 @@ async function downloadFromS3(bucket: string, key: string): Promise<Buffer> {
 }
 
 async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
-	const parser = new PDFParse({ data: pdfBuffer });
-	const result = await parser.getText();
-	return result.text;
+	const pdf = await getDocumentProxy(new Uint8Array(pdfBuffer));
+	const { text } = await extractText(pdf, { mergePages: true });
+	return text;
 }
 
 function extractNhsNumber(text: string): string | null {
@@ -113,14 +113,12 @@ async function updateLetterStatus(
 
 async function updateLetterWithResults(
 	s3Key: string,
-	nhsNumber: string | null,
 	summary: string,
-	patientId: string | null,
+	patientId: string,
 ): Promise<void> {
 	const { error } = await supabase
 		.from("letters")
 		.update({
-			nhs_number: nhsNumber,
 			summary,
 			status: "COMPLETE",
 			patient_id: patientId,
@@ -150,16 +148,17 @@ export async function handler(event: S3Event) {
 			console.log(`Extracted ${extractedText.length} characters`);
 
 			const nhsNumber = extractNhsNumber(extractedText);
-			console.log(`NHS Number: ${nhsNumber || "None"}`);
+			if (!nhsNumber) {
+				throw new Error("No NHS number found in document");
+			}
+			console.log(`NHS Number: ${nhsNumber}`);
 
-			const patientId = nhsNumber
-				? await findPatientByNhsNumber(nhsNumber)
-				: null;
+			const patientId = await findPatientByNhsNumber(nhsNumber);
 
 			const summary = await generateSummary(extractedText);
 			console.log(`Summary: ${summary.substring(0, 100)}...`);
 
-			await updateLetterWithResults(s3Key, nhsNumber, summary, patientId);
+			await updateLetterWithResults(s3Key, summary, patientId);
 
 			console.log(`Successfully processed: ${s3Key}`);
 		} catch (error) {
