@@ -129,20 +129,33 @@ export function UploadDrawer({
 									className="hidden"
 									onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
 								/>
-								<label
-									htmlFor="file-upload"
-									className="cursor-pointer text-blue-600 hover:text-blue-800 font-medium"
-								>
-									Choose a PDF file
-								</label>
-								<p className="text-sm text-gray-500 mt-2">or drag and drop</p>
-								<p className="text-xs text-gray-400 mt-1">Max 10MB</p>
+								{selectedFile ? (
+									<>
+										<p className="font-medium text-gray-900">{selectedFile.name}</p>
+										<label
+											htmlFor="file-upload"
+											className="cursor-pointer text-blue-600 hover:text-blue-800 text-sm mt-2 inline-block"
+										>
+											Change file
+										</label>
+									</>
+								) : (
+									<>
+										<label
+											htmlFor="file-upload"
+											className="cursor-pointer text-blue-600 hover:text-blue-800 font-medium"
+										>
+											Choose a PDF file
+										</label>
+										<p className="text-xs text-gray-400 mt-2">Max 10MB</p>
+									</>
+								)}
 							</div>
 						</div>
 						<button
 							type="submit"
 							disabled={isUploading || !selectedFile}
-							className="w-full bg-[#a8b3be] text-black py-3 px-4 rounded-md hover:bg-[#919ca6] disabled:opacity-50 disabled:cursor-not-allowed font-medium border border-black"
+							className="w-full bg-[#a8b3be] text-black py-3 px-4 rounded-md hover:bg-[#919ca6] disabled:opacity-50 disabled:cursor-not-allowed font-medium"
 						>
 							{isUploading ? "Uploading..." : "Upload Letter"}
 						</button>

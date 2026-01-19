@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 interface Letter {
 	id: string;
@@ -10,12 +10,12 @@ interface Letter {
 	patients: { nhs_number: string } | { nhs_number: string }[] | null;
 }
 
-interface LettersListProps {
+interface LetterTableProps {
 	letters: Letter[];
 	onUploadClick: () => void;
 }
 
-export function LettersList({ letters, onUploadClick }: LettersListProps) {
+export function LetterTable({ letters, onUploadClick }: LetterTableProps) {
 	const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
 	const toggleExpand = (id: string) => {
@@ -136,7 +136,7 @@ export function LettersList({ letters, onUploadClick }: LettersListProps) {
 									href={letter.viewUrl}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="inline-block mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium"
+									className="inline-block mt-5 text-sm text-blue-600 hover:text-blue-800 font-medium"
 								>
 									View Original Letter
 								</a>
@@ -167,9 +167,8 @@ export function LettersList({ letters, onUploadClick }: LettersListProps) {
 					</thead>
 					<tbody className="bg-[#edf1ef] divide-y divide-gray-200">
 						{letters.map((letter) => (
-							<>
+							<Fragment key={letter.id}>
 								<tr
-									key={letter.id}
 									className="hover:bg-[#dfe7e3] cursor-pointer"
 									tabIndex={0}
 									onClick={() => toggleExpand(letter.id)}
@@ -205,7 +204,7 @@ export function LettersList({ letters, onUploadClick }: LettersListProps) {
 									</td>
 								</tr>
 								{expandedIds.has(letter.id) && (
-									<tr key={`${letter.id}-expanded`}>
+									<tr>
 										<td colSpan={5} className="px-6 py-4 bg-gray-50">
 											<div className="text-sm">
 												<h4 className="font-medium text-gray-900 mb-2">
@@ -228,7 +227,7 @@ export function LettersList({ letters, onUploadClick }: LettersListProps) {
 													href={letter.viewUrl}
 													target="_blank"
 													rel="noopener noreferrer"
-													className="inline-block mt-3 text-blue-600 hover:text-blue-800 font-medium"
+													className="inline-block mt-5 text-blue-600 hover:text-blue-800 font-medium"
 												>
 													View Original Letter
 												</a>
@@ -236,7 +235,7 @@ export function LettersList({ letters, onUploadClick }: LettersListProps) {
 										</td>
 									</tr>
 								)}
-							</>
+							</Fragment>
 						))}
 					</tbody>
 				</table>

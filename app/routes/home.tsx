@@ -8,7 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { useRevalidator } from "react-router";
 import { Resource } from "sst";
-import { LettersList } from "../components/letters-list";
+import { LetterTable } from "../components/letter-table";
 import { UploadDrawer } from "../components/upload-drawer";
 import type { Route } from "./+types/home";
 
@@ -111,13 +111,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 					<button
 						type="button"
 						onClick={() => setIsDrawerOpen(true)}
-						className="bg-[#a8b3be] text-black py-2 px-4 rounded-md hover:bg-[#919ca6] text-center text-sm md:text-base border border-black"
+						className="bg-[#a8b3be] text-black py-2 px-4 rounded-md hover:bg-[#919ca6] text-center text-sm md:text-base"
 					>
 						Upload New Letter
 					</button>
 				</div>
 
-				<LettersList
+				<LetterTable
 					letters={letters}
 					onUploadClick={() => setIsDrawerOpen(true)}
 				/>
