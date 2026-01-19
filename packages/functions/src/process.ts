@@ -32,6 +32,7 @@ async function downloadFromS3(bucket: string, key: string): Promise<Buffer> {
 async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
 	const pdf = await getDocumentProxy(new Uint8Array(pdfBuffer));
 	const { text } = await extractText(pdf, { mergePages: true });
+	console.log(text);
 	return text;
 }
 

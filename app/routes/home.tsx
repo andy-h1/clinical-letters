@@ -1,7 +1,7 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createClient } from "@supabase/supabase-js";
-import { useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { Resource } from "sst";
 import type { Route } from "./+types/home";
 
@@ -50,16 +50,27 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	return (
 		<div className="min-h-screen bg-gray-50 py-12">
 			<div className="max-w-xl mx-auto px-4">
-				<h1 className="text-2xl font-bold text-gray-900 mb-8">
-					Clinical Letters
-				</h1>
+				<div className="flex justify-between items-center mb-8">
+					<h1 className="text-2xl font-bold text-gray-900">
+						Clinical Letters
+					</h1>
+					<Link
+						to="/letters"
+						className="text-blue-600 hover:text-blue-800 font-medium"
+					>
+						View All Letters
+					</Link>
+				</div>
 
 				<div className="bg-white p-6 rounded-lg shadow">
 					<h2 className="text-lg font-semibold mb-4">Upload Letter</h2>
 
 					{isSuccess && (
 						<div className="mb-4 p-3 bg-green-50 text-green-800 rounded-md">
-							Upload successful! The letter is being processed.
+							Upload successful! The letter is being processed.{" "}
+							<Link to="/letters" className="underline font-medium">
+								View all letters
+							</Link>
 						</div>
 					)}
 
