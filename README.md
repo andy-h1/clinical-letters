@@ -37,6 +37,55 @@ A full-stack application for uploading, processing, and managing clinical letter
                                           └───────────────────────┘
 ```
 
+### UML Component Diagram
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Browser[Web Browser]
+    end
+
+    subgraph "Frontend - React Router App"
+        Login[Login Page<br/>OTP Auth]
+        Home[Home Page<br/>Letter List]
+        Upload[Upload Drawer<br/>PDF Validation]
+    end
+
+    subgraph "AWS Cloud"
+        subgraph "Storage"
+            S3[(S3 Bucket<br/>PDF Storage)]
+        end
+
+        subgraph "Compute"
+            Lambda[Lambda Function<br/>PDF Processing]
+        end
+
+        subgraph "CDN"
+            CloudFront[CloudFront<br/>Distribution]
+        end
+    end
+
+    subgraph "External Services"
+        Supabase[(Supabase<br/>Auth + Database)]
+        Claude[Claude API<br/>LLM Summarization]
+    end
+
+    Browser --> CloudFront
+    CloudFront --> Login
+    CloudFront --> Home
+    CloudFront --> Upload
+
+    Login --> Supabase
+    Home --> Supabase
+    Upload -->|Presigned URL| S3
+    Upload -->|Save Record| Supabase
+
+    S3 -->|Event Trigger| Lambda
+    Lambda -->|Download PDF| S3
+    Lambda -->|Summarize| Claude
+    Lambda -->|Update Status| Supabase
+```
+
 ## Tech Stack
 
 - **Frontend**: React Router v7, TailwindCSS
@@ -140,8 +189,24 @@ aws lambda add-permission \
 - **Automatic Processing**: S3 triggers Lambda on upload
 - **NHS Number Extraction**: Regex pattern matching from PDF text
 - **AI Summarization**: Claude generates 3-5 bullet point summaries
-- **Real-time Updates**: Polling for processing status changes
+- **Status Updates**: Polling every 5 seconds for processing status
 - **Responsive Design**: Mobile cards, desktop table layout
+- **Infrastructure as Code**: All AWS resources defined in SST (sst.config.ts)
+
+## Testing
+
+```bash
+pnpm vitest run
+```
+
+Tests cover NHS number extraction and input validation logic.
+
+## CI/CD Considerations
+
+Not fully implemented, but supports:
+- `pnpm sst deploy --stage <env>` for deployments
+- Secrets managed via `pnpm sst secret set`
+- Separate AWS profiles for dev/production
 
 ---
 
@@ -174,7 +239,16 @@ aws lambda add-permission \
 - **Caching:** Store patient lookups in memory (Redis) to reduce database hits
 - **Database read replicas:** Spread read queries across copies of the database
 
-### 3. Error Handling
+### 3. Input Validation
+
+| Layer | Validation |
+|-------|-----------|
+| Client (Zod) | File type (PDF only), file size (max 10MB) |
+| S3 | Presigned URL restricts to `uploads/` prefix |
+| Lambda | PDF parsing validates file is readable |
+| Database | NHS number format checked before patient lookup |
+
+### 4. Error Handling
 
 | What can go wrong | What happens |
 |-------------------|--------------|
@@ -185,7 +259,7 @@ aws lambda add-permission \
 
 **Not yet handled:** Automatic retry button for failed letters.
 
-### 4. Observability
+### 5. Observability
 
 **How I'd debug issues:**
 1. Check CloudWatch Logs for the Lambda function
@@ -197,7 +271,7 @@ aws lambda add-permission \
 - Average processing time
 - Error rate and types
 
-### 5. Cost Breakdown
+### 6. Cost Breakdown
 
 | Service | % of Cost | Notes |
 |---------|-----------|-------|
@@ -208,7 +282,7 @@ aws lambda add-permission \
 
 **To reduce costs:** Use Claude Haiku (cheaper model) for simple letters, archive old files.
 
-### 6. Data Model
+### 7. Data Model
 
 **Why Supabase/Postgres:**
 - Built-in auth saves writing login code
@@ -225,7 +299,7 @@ aws lambda add-permission \
 
 **Current setup:** Single Supabase instance shared across environments. In production, you'd have separate local/staging/production databases to prevent direct changes to production data.
 
-### 7. Why Async Processing
+### 8. Why Async Processing
 
 Upload triggers background Lambda vs waiting for API response.
 
@@ -237,7 +311,7 @@ Upload triggers background Lambda vs waiting for API response.
 
 Async felt right because AI summarization can take a few seconds and I didn't want users staring at a spinner.
 
-### 8. Polling vs WebSockets
+### 9. Polling vs WebSockets
 
 **Current approach: Polling** - frontend checks for status updates every few seconds.
 
@@ -250,7 +324,7 @@ Async felt right because AI summarization can take a few seconds and I didn't wa
 
 For this demo, polling was faster to build and works fine. For production with many users, WebSockets (or Supabase Realtime) would be more efficient - fewer requests, instant updates.
 
-### 9. Known Limitations
+### 10. Known Limitations
 
 - No retry button for failed letters (must re-upload)
 - Polling for status (not real-time WebSocket)
@@ -259,7 +333,7 @@ For this demo, polling was faster to build and works fine. For production with m
 
 **Future improvements:** WebSocket status updates, retry mechanism, OCR for scanned docs.
 
-### 10. Production Readiness
+### 11. Production Readiness
 
 **Current state: Demo**
 
