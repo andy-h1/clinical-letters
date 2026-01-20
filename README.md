@@ -100,6 +100,17 @@ The app will be available at the URL provided by SST (typically `http://localhos
 pnpm sst deploy --stage production
 ```
 
+**Note:** As of October 2025, AWS requires both `lambda:InvokeFunctionUrl` AND `lambda:InvokeFunction` permissions for public Lambda URLs. SST may not add both automatically. If you get a 403 Forbidden error after deploying, run:
+
+```bash
+aws lambda add-permission \
+  --function-name <your-function-name> \
+  --statement-id AllowPublicInvoke \
+  --action lambda:InvokeFunction \
+  --principal "*" \
+  --profile clinical-letters-production
+```
+
 ## Project Structure
 
 ```
@@ -145,10 +156,13 @@ pnpm sst deploy --stage production
 - Upload URLs expire after 5 minutes
 - File validation: only PDFs, max 10MB
 
+**Current assumption:** All authenticated users are trusted healthcare staff with access to all patient data. No role-based access control beyond authentication.
+
 **What I'd add for production:**
 - Rate limiting to prevent spam uploads
 - Audit logs to track who accessed what
 - Stricter encryption for stored files
+- Role-based access control (admin vs standard user)
 
 ### 2. Scalability
 
@@ -209,6 +223,8 @@ pnpm sst deploy --stage production
 - `letters` - stores upload metadata, status, AI summary
 - Foreign key links letters to patients once NHS number extracted
 
+**Current setup:** Single Supabase instance shared across environments. In production, you'd have separate local/staging/production databases to prevent direct changes to production data.
+
 ### 7. Why Async Processing
 
 Upload triggers background Lambda vs waiting for API response.
@@ -253,3 +269,10 @@ For production I'd need to:
 - Set up backup procedures
 - Security review
 - Load testing with realistic volumes
+
+---
+
+## Assumptions
+
+- **Shared patient access:** All users within a practice can view all patient letters. No per-user patient restrictions.
+- **Patient must exist first:** Cannot upload a letter for a patient not already in the database. NHS number must match an existing patient record.
