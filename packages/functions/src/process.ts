@@ -12,6 +12,17 @@ const supabase = createClient(
 );
 const anthropic = new Anthropic({ apiKey: Resource.ClaudeApiKey.value });
 
+function log(level: "info" | "error", message: string, data?: object) {
+	console.log(
+		JSON.stringify({
+			level,
+			message,
+			timestamp: new Date().toISOString(),
+			...data,
+		}),
+	);
+}
+
 const NHS_NUMBER_REGEX = /\b\d{3}\s?\d{3}\s?\d{4}\b/g;
 
 async function downloadFromS3(bucket: string, key: string): Promise<Buffer> {
@@ -123,37 +134,42 @@ async function updateLetterWithResults(
 }
 
 export async function handler(event: S3Event) {
-	console.log("Processing S3 event:", JSON.stringify(event, null, 2));
-
 	for (const record of event.Records) {
 		const bucketName = record.s3.bucket.name;
 		const s3Key = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));
+		const startTime = Date.now();
 
-		console.log(`Processing file: ${s3Key} from bucket: ${bucketName}`);
+		log("info", "Processing started", { s3Key, bucketName });
 
 		try {
 			await updateLetterStatus(s3Key, "PROCESSING");
 
 			const pdfBuffer = await downloadFromS3(bucketName, s3Key);
 			const extractedText = await extractTextFromPdf(pdfBuffer);
-			console.log(`Extracted ${extractedText.length} characters`);
+			log("info", "PDF text extracted", { s3Key, charCount: extractedText.length });
 
 			const nhsNumber = extractNhsNumber(extractedText);
 			if (!nhsNumber) {
 				throw new Error("No NHS number found in document");
 			}
-			console.log(`NHS Number: ${nhsNumber}`);
+			log("info", "NHS number found", { s3Key, nhsNumber });
 
 			const patientId = await findPatientByNhsNumber(nhsNumber);
 
 			const summary = await generateSummary(extractedText);
-			console.log(`Summary: ${summary.substring(0, 100)}...`);
-
 			await updateLetterWithResults(s3Key, summary, patientId);
 
-			console.log(`Successfully processed: ${s3Key}`);
+			log("info", "Processing complete", {
+				s3Key,
+				nhsNumber,
+				durationMs: Date.now() - startTime,
+			});
 		} catch (error) {
-			console.error(`Error processing ${s3Key}:`, error);
+			log("error", "Processing failed", {
+				s3Key,
+				error: error instanceof Error ? error.message : String(error),
+				durationMs: Date.now() - startTime,
+			});
 			await updateLetterStatus(s3Key, "ERROR");
 		}
 	}
