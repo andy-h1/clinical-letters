@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { S3Event } from "aws-lambda";
 import { Resource } from "sst";
 import { extractText, getDocumentProxy } from "unpdf";
+import { extractNhsNumber } from "./utils";
 
 const s3 = new S3Client({});
 const supabase = createClient(
@@ -22,8 +23,6 @@ function log(level: "info" | "error", message: string, data?: object) {
 		}),
 	);
 }
-
-const NHS_NUMBER_REGEX = /\b\d{3}\s?\d{3}\s?\d{4}\b/g;
 
 async function downloadFromS3(bucket: string, key: string): Promise<Buffer> {
 	const command = new GetObjectCommand({ Bucket: bucket, Key: key });
@@ -44,14 +43,6 @@ async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
 	const pdf = await getDocumentProxy(new Uint8Array(pdfBuffer));
 	const { text } = await extractText(pdf, { mergePages: true });
 	return text;
-}
-
-function extractNhsNumber(text: string): string | null {
-	const matches = text.match(NHS_NUMBER_REGEX);
-	if (matches && matches.length > 0) {
-		return matches[0].replace(/\s/g, "");
-	}
-	return null;
 }
 
 async function findPatientByNhsNumber(nhsNumber: string): Promise<string> {
