@@ -43,12 +43,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 	);
 
 	const {
-		data: { user },
-	} = await supabase.auth.getUser();
+		data: { session },
+	} = await supabase.auth.getSession();
 
-	if (!user) {
+	if (!session?.user) {
 		return redirect("/login", { headers });
 	}
+
+	const user = session.user;
 
 	const supabaseAdmin = createClient(
 		Resource.SupabaseUrl.value,

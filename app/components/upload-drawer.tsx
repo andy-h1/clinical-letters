@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useFetcher, useRevalidator } from "react-router";
+import { useState } from "react";
+import { useFetcher } from "react-router";
 import { z } from "zod/v4-mini";
 import type { action } from "../routes/home";
 
@@ -25,19 +25,17 @@ export function UploadDrawer({
 }: UploadDrawerProps) {
 	const [validationError, setValidationError] = useState<string | null>(null);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
-	const revalidator = useRevalidator();
 	const fetcher = useFetcher<typeof action>();
 
 	const isUploading = fetcher.state !== "idle";
 	const isSuccess = fetcher.data?.success === true;
 	const isError = fetcher.data?.success === false;
 
-	useEffect(() => {
-		if (isSuccess) {
-			onClose();
-			revalidator.revalidate();
-		}
-	}, [isSuccess, onClose, revalidator]);
+	const handleClose = () => {
+		setSelectedFile(null);
+		setValidationError(null);
+		onClose();
+	};
 
 	return (
 		<>
@@ -45,7 +43,7 @@ export function UploadDrawer({
 				<button
 					type="button"
 					className="fixed inset-0 bg-black/50 z-40 cursor-default"
-					onClick={onClose}
+					onClick={handleClose}
 					aria-label="Close drawer"
 				/>
 			)}
@@ -63,7 +61,7 @@ export function UploadDrawer({
 						<h2 className="text-lg font-semibold">Upload Letter</h2>
 						<button
 							type="button"
-							onClick={onClose}
+							onClick={handleClose}
 							className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
 						>
 							&times;
